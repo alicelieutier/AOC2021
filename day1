@@ -1,0 +1,25 @@
+#! /usr/local/bin/python3
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+from itertools import islice
+
+def parse(file):
+  with open(file) as input:
+    return (int(n) for n in input.readlines())
+
+def process_part_1(input1, input2):
+  one_step_ahead = islice(input2, 1, None)
+  return sum(1 for a, b in zip(input1, one_step_ahead) if a < b)
+
+def process_part_2(input1, input2):
+  """
+  Comparing the sum of a sliding window is equivalent to
+  comparing the number leaving the window and the number
+  entering it, since all the other numbers inside are the same
+  """
+  three_steps_ahead = islice(input2, 3, None)
+  return sum(1 for a, b in zip(input1, three_steps_ahead) if a < b)
+
+print(process_part_1(parse(INPUT_FILE), parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE), parse(INPUT_FILE)))
