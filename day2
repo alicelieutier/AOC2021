@@ -1,0 +1,36 @@
+#! /usr/local/bin/python3
+
+from os import access
+import re
+from functools import reduce
+# from collections import deque
+# from itertools import count, islice
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  LINE_PATTERN = re.compile(r'^(?P<direction>\w+) (?P<number>\d+)(\s|$)')
+  def parse_line(line):
+    match = LINE_PATTERN.search(line)
+    direction, number = match.group('direction'), int(match.group('number'))
+    return (direction, number)
+
+  with open(file) as input:
+    return (parse_line(line) for line in input.readlines())
+
+def process(input):
+  def aux(acc, element):
+    direction, number = element
+    h, d = acc
+
+    if direction == 'up':
+      return (h, d - number)
+    if direction == 'down':
+      return (h, d + number)
+    return (h + number, d)
+  return reduce(aux, input, (0,0))
+
+input = parse(INPUT_FILE)
+h, d = process(input)
+print(h, d, h*d)
