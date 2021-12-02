@@ -19,7 +19,7 @@ def parse(file):
   with open(file) as input:
     return (parse_line(line) for line in input.readlines())
 
-def process(input):
+def process_part_1(input):
   def aux(acc, element):
     direction, number = element
     h, d = acc
@@ -31,6 +31,21 @@ def process(input):
     return (h + number, d)
   return reduce(aux, input, (0,0))
 
-input = parse(INPUT_FILE)
-h, d = process(input)
+def process_part_2(input):
+  def aux(acc, element):
+    direction, number = element
+    h, d, a = acc
+
+    if direction == 'up':
+      return (h, d, a - number)
+    if direction == 'down':
+      return (h, d, a + number)
+    # direction == 'forward'
+    return (h + number, d + a*number, a)
+  return reduce(aux, input, (0,0,0))
+
+h, d = process_part_1(parse(INPUT_FILE))
 print(h, d, h*d)
+
+h, d, a = process_part_2(parse(INPUT_FILE))
+print(h, d, a, h*d)
