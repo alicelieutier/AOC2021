@@ -1,10 +1,6 @@
 #! /usr/local/bin/python3
-
-from os import access
 import re
 from functools import reduce
-# from collections import deque
-# from itertools import count, islice
 
 INPUT_FILE = f'{__file__}.input'
 TEST_FILE = 'test.input'
@@ -22,30 +18,29 @@ def parse(file):
 def process_part_1(input):
   def aux(acc, element):
     direction, number = element
-    h, d = acc
-
+    horizontal, depth = acc
     if direction == 'up':
-      return (h, d - number)
+      return (horizontal, depth - number)
     if direction == 'down':
-      return (h, d + number)
-    return (h + number, d)
+      return (horizontal, depth + number)
+    # direction == 'forward'
+    return (horizontal + number, depth)
   return reduce(aux, input, (0,0))
 
 def process_part_2(input):
   def aux(acc, element):
     direction, number = element
-    h, d, a = acc
-
+    horizontal, depth, aim = acc
     if direction == 'up':
-      return (h, d, a - number)
+      return (horizontal, depth, aim - number)
     if direction == 'down':
-      return (h, d, a + number)
+      return (horizontal, depth, aim + number)
     # direction == 'forward'
-    return (h + number, d + a*number, a)
+    return (horizontal + number, depth + aim*number, aim)
   return reduce(aux, input, (0,0,0))
 
-h, d = process_part_1(parse(INPUT_FILE))
-print(h, d, h*d)
+horizontal, depth = process_part_1(parse(INPUT_FILE))
+print(f'Final position:{(horizontal, depth)}, result: {horizontal * depth}')
 
-h, d, a = process_part_2(parse(INPUT_FILE))
-print(h, d, a, h*d)
+horizontal, depth, aim = process_part_2(parse(INPUT_FILE))
+print(f'Final position:{(horizontal, depth, aim)}, result: {horizontal * depth}')
