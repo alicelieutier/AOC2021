@@ -16,27 +16,25 @@ def parse(file):
     return (parse_line(line) for line in input.readlines())
 
 def process_part_1(input):
+  movements = {
+    'up' : lambda number, h, d : (h, d - number),
+    'down' : lambda number, h, d : (h, d + number),
+    'forward' : lambda number, h, d : (h + number, d)
+  }
   def aux(acc, element):
     direction, number = element
-    horizontal, depth = acc
-    if direction == 'up':
-      return (horizontal, depth - number)
-    if direction == 'down':
-      return (horizontal, depth + number)
-    # direction == 'forward'
-    return (horizontal + number, depth)
+    return movements[direction](number, *acc)
   return reduce(aux, input, (0,0))
 
 def process_part_2(input):
+  movements = {
+    'up' : lambda number, h, d, a : (h, d, a - number),
+    'down' : lambda number, h, d, a : (h, d, a + number),
+    'forward' : lambda number, h, d, a : (h + number, d + a*number, a)
+  }
   def aux(acc, element):
     direction, number = element
-    horizontal, depth, aim = acc
-    if direction == 'up':
-      return (horizontal, depth, aim - number)
-    if direction == 'down':
-      return (horizontal, depth, aim + number)
-    # direction == 'forward'
-    return (horizontal + number, depth + aim*number, aim)
+    return movements[direction](number, *acc)
   return reduce(aux, input, (0,0,0))
 
 horizontal, depth = process_part_1(parse(INPUT_FILE))
