@@ -2,14 +2,15 @@
 
 INPUT_FILE = f'{__file__}.input'
 TEST_FILE = 'test.input'
-NB_SIZE = {
-  INPUT_FILE : 12,
-  TEST_FILE : 5
-}
 
+"""
+My code assumes that there are no duplicate numbers in the report.
+This has proven true in both the test input and my personal input.
+"""
 def parse_numbers(file):
   with open(file) as input:
-    return NB_SIZE[file], {int(line.strip(), 2) for line in input.readlines()}
+    lines = [line.strip() for line in input.readlines()]
+    return len(lines[0]), {int(line, 2) for line in lines}
 
 def bit_is_set(number, position):
   return number & (1 << position) > 0
@@ -17,9 +18,8 @@ def bit_is_set(number, position):
 def find_gamma_rate(numbers, position, gamma_rate):
   if position < 0:
     return gamma_rate
-  ones = {number for number in numbers if bit_is_set(number, position)}
-  zeroes = numbers - ones
-  if len(ones) > len(zeroes):
+  nb_of_ones = len([number for number in numbers if bit_is_set(number, position)])
+  if nb_of_ones > len(numbers) / 2:
     gamma_rate = gamma_rate | 1 << position
   return find_gamma_rate(numbers, position - 1, gamma_rate)
 
@@ -28,8 +28,6 @@ def process_part_1(input):
   gamma_rate = find_gamma_rate(numbers, nb_size - 1, 0)
   epsilon_rate = gamma_rate ^ (2**nb_size - 1)
   return gamma_rate, epsilon_rate, gamma_rate*epsilon_rate
-
-print(process_part_1(parse_numbers(INPUT_FILE)))
 
 def find_oxygen_generator_rating(candidates, position):
   if len(candidates) == 1:
@@ -61,4 +59,9 @@ def process_part_2(input):
   co2_rating = find_co2_scrubber_rating(numbers, nb_size - 1)
   return oxy_rating, co2_rating, oxy_rating*co2_rating
 
+
+print(process_part_1(parse_numbers(INPUT_FILE)))
 print(process_part_2(parse_numbers(INPUT_FILE)))
+
+assert process_part_1(parse_numbers(INPUT_FILE)) == (3797, 298, 1131506)
+assert process_part_2(parse_numbers(INPUT_FILE)) == (4089, 1923, 7863147)
