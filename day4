@@ -1,5 +1,4 @@
 #! /usr/local/bin/python3
-
 import re
 
 INPUT_FILE = f'{__file__}.input'
@@ -22,51 +21,49 @@ def parse(file):
     return draw, boards
 
 # board module
-def mark(board, number):
-  """returns a board where number was marked (removed)"""
-  rows, columns = board
-  rows = [row.discard(number) for row in rows]
-  columns = [column.discard(number) for column in columns]
-  return (rows, columns)
-
 def is_win(board):
   rows, columns = board
   return any(len(row) == 0 for row in rows) or any(len(column) == 0 for column in columns)
 
 def score(board):
-  """returns the sum of all unmarked (removed) number on a board"""
+  """Returns the sum of all unmarked (removed) number on a board"""
   rows, _ = board
   return sum(sum(row) for row in rows)
+
+def mark(board, number):
+  """
+  Mutates the board to remove the marked number.
+  Returns the final score if the board has been won.
+  Returns None otherwise
+  """
+  rows, columns = board
+  rows = [row.discard(number) for row in rows]
+  columns = [column.discard(number) for column in columns]
+  if is_win(board):
+    return score(board) * number
+  return None
 
 def process_part_1(input):
   draw, boards = input
   for number in draw:
     for board in boards:
-      mark(board, number)
-      if is_win(board):
-        return score(board) * number
+      win = mark(board, number)
+      if win is not None: return win
   return 'no winner'
 
 def process_part_2(input):
   draw, boards = input
-  last_board = None
-  last_win_number = None
+  last_final_score = None
   for number in draw:
-    index = 0
-    while index < len(boards):
-      board = boards[index]
-      mark(board, number)
-      if is_win(board):
-        last_board = board
-        last_win_number = number
-        boards.pop(index)
-        index =-1
-      index += 1
-  return score(last_board) * last_win_number
-
+    for board in boards[:]:
+      win = mark(board, number)
+      if win is not None:
+        last_final_score = win
+        boards.remove(board)
+  return last_final_score
 
 print(process_part_1(parse(INPUT_FILE)))
-assert process_part_1(parse(TEST_FILE)) == 4512
+assert process_part_1(parse(INPUT_FILE)) == 67716
 
 print(process_part_2(parse(INPUT_FILE)))
-assert process_part_2(parse(TEST_FILE)) == 1924
+assert process_part_2(parse(INPUT_FILE)) == 1830
