@@ -1,23 +1,24 @@
 #! /usr/local/bin/python3
 import re
+from itertools import islice
 
 INPUT_FILE = f'{__file__}.input'
 TEST_FILE = 'test.input'
 
+def parse_board(lines):
+  board = [[int(i) for i in re.split(' +', line.strip())] for line in lines]
+  rows = [set(row) for row in board]
+  columns = [{board[j][i] for j in range(5)} for i in range(5)]
+  return rows, columns
+
 def parse(file):
   with open(file) as input:
     lines = input.readlines()
-    draw = list(map(int, lines[0].strip().split(',')))
-    line_nb = 1
+    draw = (int(number) for number in lines[0].strip().split(','))
     boards = []
-    while(line_nb < len(lines)):
-      line_nb += 1
-      board = lines[line_nb:line_nb + 5]
-      board = [[int(i) for i in re.split(' +', row.strip())] for row in board]
-      rows = [set(row) for row in board]
-      columns = [{board[j][i] for j in range(5)} for i in range(5)]
-      boards.append((rows, columns))
-      line_nb += 5
+    for line_nb in range(2, len(lines), 6):
+      board = parse_board(islice(lines, line_nb, line_nb + 5))
+      boards.append(board)
     return draw, boards
 
 # board module
@@ -26,7 +27,7 @@ def is_win(board):
   return any(len(row) == 0 for row in rows) or any(len(column) == 0 for column in columns)
 
 def score(board):
-  """Returns the sum of all unmarked (removed) number on a board"""
+  """Returns the sum of all remaining (unmarked) numbers on a board"""
   rows, _ = board
   return sum(sum(row) for row in rows)
 
@@ -43,27 +44,19 @@ def mark(board, number):
     return score(board) * number
   return None
 
-def process_part_1(input):
+def process(input):
   draw, boards = input
-  for number in draw:
-    for board in boards:
-      win = mark(board, number)
-      if win is not None: return win
-  return 'no winner'
-
-def process_part_2(input):
-  draw, boards = input
-  last_final_score = None
+  wins = []
   for number in draw:
     for board in boards[:]:
       win = mark(board, number)
       if win is not None:
-        last_final_score = win
+        wins.append(win)
         boards.remove(board)
-  return last_final_score
+  return wins[0], wins[-1]
 
-print(process_part_1(parse(INPUT_FILE)))
-assert process_part_1(parse(INPUT_FILE)) == 67716
+first_win, last_win = process(parse(INPUT_FILE))
+print(first_win, last_win)
 
-print(process_part_2(parse(INPUT_FILE)))
-assert process_part_2(parse(INPUT_FILE)) == 1830
+assert first_win == 67716
+assert last_win == 1830
