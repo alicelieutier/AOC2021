@@ -22,14 +22,15 @@ def horizontal_or_vertical(line):
 
 def better_range(start, end):
   if (end > start): return range(start, end + 1)
-  return range(end, start + 1)
+  return range(start, end - 1, -1)
 
 def points_in_line(line):
   (x0,y0),(x1,y1) = line
   if x0 == x1:
     return {(x0, y) for y in better_range(y0, y1)}
-  return {(x, y0) for x in better_range(x0, x1)}
-
+  if y0 == y1:
+    return {(x, y0) for x in better_range(x0, x1)}
+  return {(x, y) for x, y in zip(better_range(x0, x1), better_range(y0, y1))}
 
 def process_part_1(input):
   c = Counter()
@@ -39,10 +40,15 @@ def process_part_1(input):
   return len([k for k, v in c.items() if v >= 2])
 
 def process_part_2(input):
-  pass
+  c = Counter()
+  for line in input:
+    c.update(points_in_line(line))
+  return len([k for k, v in c.items() if v >= 2])
 
 print(process_part_1(parse(INPUT_FILE)))
-# print(process_part_2(parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE)))
 
 assert points_in_line(((1,3),(1,0))) == {(1,3),(1,2),(1,1),(1,0)}
+assert points_in_line(((0,4),(4,0))) == {(0,4),(1,3),(2,2),(3,1),(4,0)}
 assert process_part_1(parse(TEST_FILE)) == 5
+assert process_part_2(parse(TEST_FILE)) == 12
