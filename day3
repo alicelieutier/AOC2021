@@ -20,7 +20,7 @@ def find_gamma_rate(numbers, position, gamma_rate):
     return gamma_rate
   nb_of_ones = len([number for number in numbers if bit_is_set(number, position)])
   if nb_of_ones > len(numbers) / 2:
-    gamma_rate = gamma_rate | 1 << position
+    gamma_rate = gamma_rate + (1 << position)
   return find_gamma_rate(numbers, position - 1, gamma_rate)
 
 def process_part_1(input):
