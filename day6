@@ -1,0 +1,52 @@
+#! /usr/local/bin/python3
+
+import re
+# from functools import reduce, lru_cache
+from collections import Counter
+# from itertools import count, islice
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  with open(file) as input:
+    numbers = input.read().strip().split(',')
+    return [int(number) for number in numbers]
+
+def fish_simulator(initial_state):
+  a,b,c,d,e,f,g,h,i = initial_state
+  while True:
+    a,b,c,d,e,f,g,h,i = b,c,d,e,f,g,h + a,i,a
+    yield [a,b,c,d,e,f,g,h,i]
+
+
+def process_part_1(input):
+  fish = dict(Counter(input))
+  fish_array = [0,0,0,0,0,0,0,0,0]
+  for k, v in fish.items():
+    fish_array[k] = v
+  fish_sim = fish_simulator(fish_array)
+  result = 0
+  for _ in range(80):
+    result = sum(next(fish_sim))
+  return result
+
+def process_part_2(input):
+  fish = dict(Counter(input))
+  fish_array = [0,0,0,0,0,0,0,0,0]
+  for k, v in fish.items():
+    fish_array[k] = v
+  fish_sim = fish_simulator(fish_array)
+  result = 0
+  for _ in range(256):
+    result = sum(next(fish_sim))
+  return result
+
+print(process_part_1(parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE)))
+
+
+test_input = [3,4,3,1,2]
+
+assert process_part_1(test_input) == 5934
+assert process_part_2(test_input) == 26984457539
