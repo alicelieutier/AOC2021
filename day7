@@ -29,7 +29,7 @@ def total_fuel_need_function(input, fuel_calculator):
 def find_minimum(fuel_need, position):
   """
   Calculates fuel needed to go to the previous and next postion, and
-  follow the one that is lowest
+  follows the one that is lowest
   """
   before_value = fuel_need(position - 1)
   after_value = fuel_need(position + 1)
