@@ -26,26 +26,27 @@ def total_fuel_need_function(input, fuel_calculator):
     return memo[goal]
   return aux
 
-def find_minimum(fuel_need, position):
+def find_minimum(fuel_need, start, end):
   """
-  Calculates fuel needed to go to the previous and next postion, and
-  follows the one that is lowest
+  Uses divide and conquer to hone in on the minimum
   """
-  before_value = fuel_need(position - 1)
-  after_value = fuel_need(position + 1)
-  if before_value < fuel_need(position):
-    return find_minimum(fuel_need, position - 1)
-  if after_value < fuel_need(position):
-    return find_minimum(fuel_need, position + 1)
-  return fuel_need(position)
+  step = (end - start) // 3
+  if step < 2:
+    return min(fuel_need(i) for i in range(start, end + 1))
+  positions = [start, start + step, end - step, end]
+  fuel_for_pos = [fuel_need(pos) for pos in positions]
+  min_position = positions[fuel_for_pos.index(min(fuel_for_pos))]
+  return find_minimum(fuel_need, min_position - step, min_position + step)
 
 def process(input, fuel_calculator):
-  average =  sum(input) // len(input)
   total_fuel = total_fuel_need_function(input, fuel_calculator)
-  return find_minimum(total_fuel, average)
+  return find_minimum(total_fuel, min(input), max(input))
 
 print(process(parse(INPUT_FILE), fuel_calculator_part_1))
 print(process(parse(INPUT_FILE), fuel_calculator_part_2))
+
+assert process(parse(INPUT_FILE), fuel_calculator_part_1) == 328318
+assert process(parse(INPUT_FILE), fuel_calculator_part_2) == 89791146
 
 test_input = [16,1,2,0,4,2,7,1,2,14]
 assert process(test_input, fuel_calculator_part_1) == 37
