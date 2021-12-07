@@ -1,0 +1,19 @@
+#! /usr/local/bin/python3
+INPUT_FILE = f'{__file__}.input'
+
+def parse(file):
+  with open(file) as input:
+    numbers = input.read().strip().split(',')
+    input = [int(number) for number in numbers]
+    return input
+
+def fuel_need(input, goal):
+  return sum(abs(goal - i) for i in input)
+
+def process(input):
+  return min([fuel_need(input, goal) for goal in range(min(input), max(input) + 1)])
+
+print(process(parse(INPUT_FILE)))
+
+test_input = [16,1,2,0,4,2,7,1,2,14]
+assert process(test_input) == 37
