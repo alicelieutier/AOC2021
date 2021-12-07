@@ -7,13 +7,22 @@ def parse(file):
     input = [int(number) for number in numbers]
     return input
 
-def fuel_need(input, goal):
-  return sum(abs(goal - i) for i in input)
+def fuel_need_part_1(a, b):
+  return abs(a - b)
 
-def process(input):
-  return min([fuel_need(input, goal) for goal in range(min(input), max(input) + 1)])
+def fuel_need_part_2(a, b):
+  distance = abs(a - b)
+  return int(distance * (distance + 1) / 2)
 
-print(process(parse(INPUT_FILE)))
+def fuel_need(input, fuel_calculator, goal):
+  return sum(fuel_calculator(goal, i) for i in input)
+
+def process(input, fuel_calculator):
+  return min([fuel_need(input, fuel_calculator, goal) for goal in range(min(input), max(input) + 1)])
+
+print(process(parse(INPUT_FILE), fuel_need_part_1))
+print(process(parse(INPUT_FILE), fuel_need_part_2))
 
 test_input = [16,1,2,0,4,2,7,1,2,14]
-assert process(test_input) == 37
+assert process(test_input, fuel_need_part_1) == 37
+assert process(test_input, fuel_need_part_2) == 168
