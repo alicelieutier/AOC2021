@@ -1,10 +1,9 @@
 #! /usr/local/bin/python3
 from functools import reduce
+from itertools import count
 
 INPUT_FILE = f'{__file__}.input'
 TEST_FILE = f'{__file__}_test.input'
-
-# DIGITS = ['abcefg', 'cf', 'acdeg', 'acdfg','bcdf','abdfg','abdefg','acf','abcdefg','abcdfg']
 
 def digits_per_segment_number(digits):
   result = {}
@@ -26,55 +25,54 @@ def process_part_1(input):
     return acc + len([1 for s in output if len(s) in {2,3,4,7}])
   return reduce(aux, input, 0)
 
-def digit_map(digits):
-  digits_to_decode = set(digits)
-  pouah = digits_per_segment_number(digits)
-  map = {
-    1: pouah[2][0],
-    7: pouah[3][0],
-    4: pouah[4][0],
-    8: pouah[7][0],
-  }
-  # print(pouah)
-  # top segment
-  a = (set(map[7]) - set(map[1])).pop()
+def find_first_and_pop(popable, condition):
+  item = [item for item in popable if condition(item)][0]
+  popable.remove(item)
+  return item
 
-  # 6 is the only 6 digit that doesn't overlap with 7
+def digit_map(digits):
+  digits_left = set(digits)
+  d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 = [None]*10
+  d1 = find_first_and_pop(digits_left, lambda d : len(d) == 2)
+  d4 = find_first_and_pop(digits_left, lambda d : len(d) == 4)
+  d7 = find_first_and_pop(digits_left, lambda d : len(d) == 3)
+  d8 = find_first_and_pop(digits_left, lambda d : len(d) == 7)
+
+  # top segment
+  a = (set(d7) - set(d1)).pop()
+
+  # 6 is the only number with 6 digits that doesn't overlap with 7
+  d6 = find_first_and_pop(digits_left, lambda d : len(d) == 6 and len(set(d7) - set(d)) == 1)
+  
   # top right segment
-  map[6] = [d for d in pouah[6] if len(set(map[7]) - set(d)) == 1][0]
-  c = (set(map[8]) - set(map[6])).pop()
+  c = (set(d8) - set(d6)).pop()
 
   # now we can have bottom right segment thanks to 1
-  f = (set(map[1]) - {c}).pop()
+  f = (set(d1) - {c}).pop()
 
   # we can now know which of the 5 segments digits are 2, 3 and 5
   # since 3 has both c & f, 2 has c and 5 has f
-  map[2] = [d for d in pouah[5] if c in set(d) and not f in set(d)][0]
-  map[3] = [d for d in pouah[5] if c in set(d) and f in set(d)][0]
-  map[5] = [d for d in pouah[5] if c not in set(d) and f in set(d)][0]
+  d2 = find_first_and_pop(digits_left, lambda d : len(d) == 5 and c in set(d) and not f in set(d))
+  d3 = find_first_and_pop(digits_left, lambda d : len(d) == 5 and c in set(d) and f in set(d))
+  # 5 is last 5 segment digit
+  d5 = find_first_and_pop(digits_left, lambda d : len(d) == 5)
 
   # middle + bottom segments are what's left when a,c,f are removed from 3
-  middle_bottom = set(map[3]) - {a,c,f}
+  d_and_g = set(d3) - {a,c,f}
 
   # zero only have one of middle + bottom
-  map[0] = [d for d in pouah[6] if len(middle_bottom - set(d)) == 1 ][0]
+  d0 = find_first_and_pop(digits_left, lambda d : len(d_and_g - set(d)) == 1)
 
   # nine is the last digit left
-  map[9] = (set(digits) - set(map.values())).pop()
+  d9 = digits_left.pop()
 
-  code = {
-    'a': a,
-    'c': c,
-    'f': f,
-  }
-  # print('code', code)
-  # print('map', map)
-  return {''.join(sorted(v)):k for k, v in map.items()}
+  # sort digit strings alphabetically
+  d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 = [''.join(sorted(d)) for d in [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9]]
 
+  return {d:i for d, i in zip([d0, d1, d2, d3, d4, d5, d6, d7, d8, d9], count())}
 
 def output_value(digits, output):
   code = digit_map(digits)
-  # print(code)
   output_digits = ''.join([str(code[''.join(sorted(digit))]) for digit in output])
   return int(output_digits)
 
