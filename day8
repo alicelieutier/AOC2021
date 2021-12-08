@@ -6,12 +6,12 @@ TEST_FILE = f'{__file__}_test.input'
 
 # DIGITS = ['abcefg', 'cf', 'acdeg', 'acdfg','bcdf','abdfg','abdefg','acf','abcdefg','abcdfg']
 
-# def digits_per_segment_number():
-#   result = {}
-#   for d, i in zip(DIGITS, count()):
-#     result.setdefault(len(d),[])
-#     result[len(d)].append(i)
-#   return result
+def digits_per_segment_number(digits):
+  result = {}
+  for d in digits:
+    result.setdefault(len(d),[])
+    result[len(d)].append(d)
+  return result
 
 def parse(file):
   def parse_line(line):
@@ -26,10 +26,63 @@ def process_part_1(input):
     return acc + len([1 for s in output if len(s) in {2,3,4,7}])
   return reduce(aux, input, 0)
 
+def digit_map(digits):
+  digits_to_decode = set(digits)
+  pouah = digits_per_segment_number(digits)
+  map = {
+    1: pouah[2][0],
+    7: pouah[3][0],
+    4: pouah[4][0],
+    8: pouah[7][0],
+  }
+  # print(pouah)
+  # top segment
+  a = (set(map[7]) - set(map[1])).pop()
+
+  # 6 is the only 6 digit that doesn't overlap with 7
+  # top right segment
+  map[6] = [d for d in pouah[6] if len(set(map[7]) - set(d)) == 1][0]
+  c = (set(map[8]) - set(map[6])).pop()
+
+  # now we can have bottom right segment thanks to 1
+  f = (set(map[1]) - {c}).pop()
+
+  # we can now know which of the 5 segments digits are 2, 3 and 5
+  # since 3 has both c & f, 2 has c and 5 has f
+  map[2] = [d for d in pouah[5] if c in set(d) and not f in set(d)][0]
+  map[3] = [d for d in pouah[5] if c in set(d) and f in set(d)][0]
+  map[5] = [d for d in pouah[5] if c not in set(d) and f in set(d)][0]
+
+  # middle + bottom segments are what's left when a,c,f are removed from 3
+  middle_bottom = set(map[3]) - {a,c,f}
+
+  # zero only have one of middle + bottom
+  map[0] = [d for d in pouah[6] if len(middle_bottom - set(d)) == 1 ][0]
+
+  # nine is the last digit left
+  map[9] = (set(digits) - set(map.values())).pop()
+
+  code = {
+    'a': a,
+    'c': c,
+    'f': f,
+  }
+  # print('code', code)
+  # print('map', map)
+  return {''.join(sorted(v)):k for k, v in map.items()}
+
+
+def output_value(digits, output):
+  code = digit_map(digits)
+  # print(code)
+  output_digits = ''.join([str(code[''.join(sorted(digit))]) for digit in output])
+  return int(output_digits)
+
 def process_part_2(input):
-  pass
+  return sum(output_value(digits, output) for digits, output in input)
 
 assert process_part_1(parse(TEST_FILE)) == 26
+assert process_part_2(parse(TEST_FILE)) == 61229
 
 print(process_part_1(parse(INPUT_FILE)))
-# print(process_part_2(parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE)))
