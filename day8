@@ -1,0 +1,44 @@
+#! /usr/local/bin/python3
+
+import re
+from collections import Counter
+from itertools import count
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = f'{__file__}_test.input'
+
+DIGITS = ['abcefg', 'cf', 'acdeg', 'acdfg','bcdf','abdfg','abdefg','acf','abcdefg','abcdfg']
+
+def digits_per_segment_number():
+  result = {}
+  for d, i in zip(DIGITS, count()):
+    result.setdefault(len(d),[])
+    result[len(d)].append(i)
+  return result
+
+def digits_with_unique_segment_number():
+  return {sn: d[0] for sn, d in digits_per_segment_number().items() if len(d) == 1}
+
+def parse(file):
+  def parse_line(line):
+    digits, output = line.strip().split(' | ')
+    return (digits.split(' '), output.split(' '))
+  with open(file) as input:
+    return [parse_line(line) for line in input.readlines()]
+
+def process_part_1(input):
+  acc = 0
+  unique_lengths = digits_with_unique_segment_number().keys()
+  for (_, output) in input:
+    acc += len(list(filter(lambda s: (len(s) in unique_lengths), output)))
+  return acc
+
+def process_part_2(input):
+  pass
+
+
+# # print(process_part_2(parse(INPUT_FILE)))
+
+assert process_part_1(parse(TEST_FILE)) == 26
+
+print(process_part_1(parse(INPUT_FILE)))
