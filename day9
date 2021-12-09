@@ -14,14 +14,15 @@ def neighbours(input, i, j):
 def is_minimum(input, i, j):
   return all(input[ni][nj] > input[i][j] for ni, nj in neighbours(input, i, j))
 
-def positions(input):
-  """returns all coordinates in the input to make it easier to iterate on"""
-  return ((i, j) for j in range(len(input[0])) for i in range(len(input)))
+def minimum_coordinates(input):
+  """returns coordinates for all minimums in input"""
+  valid_coordinates = ((i, j) for j in range(len(input[0])) for i in range(len(input)))
+  return ((i, j) for (i, j) in valid_coordinates if is_minimum(input, i, j))
 
 def basin_size(input, minimum):
   """returns the size of a basin for a given minimum"""
   # graph traversal through neighbours starting from minimum, stop when value = 9
-  to_explore = {minimum}
+  to_explore = { minimum }
   basin = set()
   while len(to_explore) > 0:
     i, j = to_explore.pop()
@@ -31,12 +32,10 @@ def basin_size(input, minimum):
   return len(basin)
 
 def process_part_1(input):
-  minimums = ((i, j) for (i, j) in positions(input) if is_minimum(input, i, j))
-  return sum(input[i][j] + 1 for (i, j) in minimums)
+  return sum(input[i][j] + 1 for (i, j) in minimum_coordinates(input))
 
 def process_part_2(input):
-  minimums = ((i, j) for (i, j) in positions(input) if is_minimum(input, i, j))
-  basin_sizes = (basin_size(input, minimum) for minimum in minimums)
+  basin_sizes = (basin_size(input, minimum) for minimum in minimum_coordinates(input))
   a, b, c = sorted(basin_sizes, reverse=True)[:3]
   return a*b*c
 
