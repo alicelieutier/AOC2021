@@ -1,0 +1,72 @@
+#! /usr/local/bin/python3
+
+from functools import reduce
+# from collections import deque
+# from itertools import count, islice
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  def parse_line(line):
+    return [int(character) for character in line]
+  with open(file) as input:
+    return [parse_line(line.strip()) for line in input.readlines()]
+
+def neighbours(size_i, size_j, i,j):
+  coords = [
+    (i, j-1),
+    (i-1, j),
+    (i+1, j),
+    (i, j+1),
+  ]
+  return [(ni,nj) for ni,nj in coords if ni >= 0 and ni < size_i and nj >= 0 and nj < size_j]
+
+def is_minimum(input, i, j):
+  size_i = len(input)
+  size_j = len(input[0])
+  for ni, nj in neighbours(size_i, size_j, i,j):
+    if input[ni][nj] <= input[i][j]:
+      return False
+  return True
+
+def coord_iterator(input):
+  size_i = len(input)
+  size_j = len(input[0])
+  for i in range(size_i):
+    for j in range(size_j):
+      yield (i, j)
+
+def find_basin_size(input, minimum):
+  # graph traversal through neighbours, stop when value = 9
+  size_i = len(input)
+  size_j = len(input[0])
+  to_explore = {minimum}
+  basin = set()
+  while len(to_explore) > 0:
+    i, j = to_explore.pop()
+    basin.add((i,j))
+    around = set([(ni, nj) for ni, nj in neighbours(size_i, size_j, i,j) if input[ni][nj] < 9])
+    to_explore |= (around - basin)
+  return len(basin)
+
+def process_part_1(input):
+  minimums = ((i, j) for (i,j) in coord_iterator(input) if is_minimum(input, i, j))
+  return sum(input[i][j] + 1 for (i,j) in minimums)
+
+def process_part_2(input):
+  minimums = ((i, j) for (i,j) in coord_iterator(input) if is_minimum(input, i, j))
+  basin_sizes = (find_basin_size(input, minimum) for minimum in minimums)
+  a, b, c = sorted(basin_sizes, reverse=True)[:3]
+  return a*b*c
+
+assert is_minimum([[9,9,9],[9,3,9],[9,9,9]], 1, 1) == True
+assert is_minimum([[9,9,9],[9,3,2],[9,9,9]], 1, 1) == False
+
+assert process_part_1(parse(TEST_FILE)) == 15
+assert process_part_2(parse(TEST_FILE)) == 1134
+
+print(process_part_1(parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE)))
+
+
