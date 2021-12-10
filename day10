@@ -1,5 +1,7 @@
 #! /usr/local/bin/python3
 
+from functools import reduce
+
 INPUT_FILE = f'{__file__}.input'
 
 def parse(file):
@@ -35,18 +37,15 @@ def scores_for_line(line):
 def scores_for_line_rec(char_gen, stack):
   try:
     char = next(char_gen)
-    if char in '[{(<' : return scores_for_line_rec(char_gen, stack + [char])
-    expected = PAIRS[stack.pop()]
-    if char != expected:
-      return (ILLEGAL_SCORE[char], 0)
+    if char in '[{(<' : return scores_for_line_rec(char_gen, stack + [PAIRS[char]])
+    if char != stack.pop(): return (ILLEGAL_SCORE[char], 0)
     return scores_for_line_rec(char_gen, stack)
   except StopIteration:
-    # count what's left in the stack
-    score = 0
-    while len(stack) > 0:
-      expected = PAIRS[stack.pop()]
-      score = score * 5 + COMPLETION_SCORE[expected]
-    return (0, score)
+    return (0, count_stack(stack))
+
+def count_stack(stack):
+  aux = lambda score, char: score * 5 + COMPLETION_SCORE[char]
+  return reduce(aux, reversed(stack), 0)
 
 def process(input):
   scores = [scores_for_line(line) for line in input]
