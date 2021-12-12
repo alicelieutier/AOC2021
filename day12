@@ -1,7 +1,5 @@
 #! /usr/local/bin/python3
-
 INPUT_FILE = f'{__file__}.input'
-TEST_FILE = 'test.input'
 
 def parse(file):
   with open(file) as input:
@@ -16,37 +14,39 @@ def edges_from_input(input):
     edges[b].add(a)
   return edges
 
-def is_small(cave):
-  return cave[0] >= 'a' and cave[0] <= 'z'
-
-def ways_to_part_1(edges, paths, current, goal, path = ['start']):
-  if goal == current:
-    paths.append(','.join(path))
-    return
-  for node in edges[current]:
-    if node not in path or not is_small(node):
-      ways_to_part_1(edges, paths, node, goal, path + [node])
+def is_large(cave):
+  return cave[0] >= 'A' and cave[0] <= 'Z'
 
 def process_part_1(input):
   edges = edges_from_input(input)
   paths = []
-  ways_to_part_1(edges, paths, 'start', 'end')
+
+  def find_ways(current='start', path=['start']):
+    if current == 'end':
+      paths.append(','.join(path))
+      return
+    for node in edges[current]:
+      if node not in path or is_large(node):
+        find_ways(node, path + [node])
+
+  find_ways()
   return len(paths)
 
-def ways_to_part_2(edges, paths, current, goal, path = ['start'], double_visit=False):
-  if goal == current:
-    paths.append(','.join(path))
-    return
-  for node in edges[current]:
-    if (node not in path or not is_small(node)):
-      ways_to_part_2(edges, paths, node, goal, path + [node], double_visit)
-    elif (double_visit == False and node not in ['start', 'end']):
-      ways_to_part_2(edges, paths, node, goal, path + [node], True)
-      
 def process_part_2(input):
   edges = edges_from_input(input)
   paths = []
-  ways_to_part_2(edges, paths, 'start', 'end')
+
+  def find_ways(current='start', path=['start'], double_visit=False):
+    if current == 'end':
+      paths.append(','.join(path))
+      return
+    for node in edges[current]:
+      if (node not in path or is_large(node)):
+        find_ways(node, path + [node], double_visit)
+      elif (double_visit == False and node not in ['start', 'end']):
+        find_ways(node, path + [node], True)
+  
+  find_ways()
   return len(paths)
 
 example_1 = [['start', 'A'], ['start', 'b'], ['A', 'c'], ['A', 'b'], ['b', 'd'], ['A', 'end'], ['b', 'end']]
