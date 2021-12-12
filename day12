@@ -1,0 +1,61 @@
+#! /usr/local/bin/python3
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  with open(file) as input:
+    return list((line.strip().split('-') for line in input.readlines()))
+
+def edges_from_input(input):
+  edges = {}
+  for a, b in input:
+    edges.setdefault(a, set())
+    edges.setdefault(b, set())
+    edges[a].add(b)
+    edges[b].add(a)
+  return edges
+
+def is_small(cave):
+  return cave[0] >= 'a' and cave[0] <= 'z'
+
+def ways_to_part_1(edges, paths, current, goal, path = ['start']):
+  if goal == current:
+    paths.append(','.join(path))
+    return
+  for node in edges[current]:
+    if node not in path or not is_small(node):
+      ways_to_part_1(edges, paths, node, goal, path + [node])
+
+def process_part_1(input):
+  edges = edges_from_input(input)
+  paths = []
+  ways_to_part_1(edges, paths, 'start', 'end')
+  return len(paths)
+
+def ways_to_part_2(edges, paths, current, goal, path = ['start'], double_visit=False):
+  if goal == current:
+    paths.append(','.join(path))
+    return
+  for node in edges[current]:
+    if (node not in path or not is_small(node)):
+      ways_to_part_2(edges, paths, node, goal, path + [node], double_visit)
+    elif (double_visit == False and node not in ['start', 'end']):
+      ways_to_part_2(edges, paths, node, goal, path + [node], True)
+      
+def process_part_2(input):
+  edges = edges_from_input(input)
+  paths = []
+  ways_to_part_2(edges, paths, 'start', 'end')
+  return len(paths)
+
+example_1 = [['start', 'A'], ['start', 'b'], ['A', 'c'], ['A', 'b'], ['b', 'd'], ['A', 'end'], ['b', 'end']]
+assert process_part_1(example_1) == 10
+assert process_part_2(example_1) == 36
+
+example_2 = [['dc', 'end'], ['HN', 'start'], ['start', 'kj'], ['dc', 'start'], ['dc', 'HN'], ['LN', 'dc'], ['HN', 'end'], ['kj', 'sa'], ['kj', 'HN'], ['kj', 'dc']]
+assert process_part_1(example_2) == 19
+assert process_part_2(example_2) == 103
+
+print(process_part_1(parse(INPUT_FILE)))
+print(process_part_2(parse(INPUT_FILE)))
