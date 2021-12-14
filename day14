@@ -1,0 +1,69 @@
+#! /usr/local/opt/python@3.10/bin/python3
+
+import re
+from functools import lru_cache, reduce
+from collections import Counter
+from itertools import pairwise
+
+INPUT_FILE = f'{__file__}.input'
+
+def parse(file):
+  LINE_PATTERN = re.compile(r'^(?P<pair>[A-Z][A-Z]) -> (?P<insertion>[A-Z])(\s|$)')
+  def parse_rule(line):
+    match = LINE_PATTERN.search(line)
+    pair, insertion = match.group('pair'), match.group('insertion')
+    return pair, insertion
+
+  with open(file) as input:
+    chain, rules = input.read().split('\n\n')
+    rules = dict(parse_rule(line) for line in rules.split('\n'))
+    return chain, rules
+
+def pairs_from_chain(chain):
+  return Counter(f'{a}{b}' for a, b in pairwise(chain))
+
+@lru_cache
+def pairs_from_rule(pair, insert):
+  return (f'{pair[0]}{insert}', f'{insert}{pair[1]}')
+
+def polymerize(pairs, rules):
+  def aux(acc, element):
+    pair, frequency = element
+    pair1, pair2 = pairs_from_rule(pair, rules[pair])
+    acc.update({pair1: frequency})
+    acc.update({pair2: frequency})
+    return acc
+  return reduce(aux, pairs.items(), Counter())
+
+def letter_count_from_pairs(pairs, original_chain):
+  first, last = original_chain[0], original_chain[-1]
+  result = Counter()
+  for pair, frequency in pairs.items():
+    result.update({pair[0]: frequency})
+    result.update({pair[1]: frequency})
+  result[first] += 1
+  result[last] += 1
+  return {letter: frequency // 2 for letter, frequency in result.items()}
+
+def process(input, steps):
+  chain, rules = input
+  pairs = pairs_from_chain(chain)
+  for _ in range(steps):
+    pairs = polymerize(pairs, rules)
+  letter_count = letter_count_from_pairs(pairs, chain)
+  return max(letter_count.values()) - min(letter_count.values())
+
+assert pairs_from_chain('NNCB') == {'NN':1, 'NC':1, 'CB':1}
+assert polymerize({'AB':1}, {'AB': 'B'}) == {'AB': 1, 'BB': 1}
+assert polymerize({'AA':2}, {'AA': 'B'}) == {'AB': 2, 'BA': 2}
+assert polymerize({'AA':1}, {'AA': 'A'}) == {'AA': 2}
+
+assert letter_count_from_pairs({'AA':2}, 'AA') == {'A' : 3}
+assert letter_count_from_pairs({'NN':1, 'NC':1, 'CB':1}, 'NB') == {'N' : 2, 'C': 1, 'B': 1}
+
+test_input = ('NNCB', {'CH': 'B', 'HH': 'N', 'CB': 'H', 'NH': 'C', 'HB': 'C', 'HC': 'B', 'HN': 'C', 'NN': 'C', 'BH': 'H', 'NC': 'B', 'NB': 'B', 'BN': 'B', 'BB': 'N', 'BC': 'B', 'CC': 'N', 'CN': 'C'})
+assert process(test_input, 10) == 1588
+assert process(test_input, 40) == 2188189693529
+
+print(process(parse(INPUT_FILE), 10))
+print(process(parse(INPUT_FILE), 40))
