@@ -1,0 +1,66 @@
+#! /usr/local/bin/python3
+
+import re
+# from functools import reduce, lru_cache
+# from collections import deque
+# from itertools import count, islice
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  def parse_line(line):
+    return [int(character) for character in line]
+  with open(file) as input:
+    return [parse_line(line.strip()) for line in input.readlines()]
+
+def neighbours(size_i, size_j, i, j):
+  potential_neighbours = [
+    (i, j-1), (i-1, j), (i+1, j), (i, j+1),
+  ]
+  return {
+    (ni, nj) for ni, nj in potential_neighbours
+    if ni >= 0 and ni < size_i and nj >= 0 and nj < size_j
+  }
+
+def lowest_distance_node(nodes, distance_from_start):
+  by_dist = {distance_from_start[node]: node for node in nodes}
+  return by_dist[min(by_dist.keys())]
+
+def merge_keep_lowest_value(dict1, dict2):
+  result = dict1
+  for key, value in dict2.items():
+    if key not in result:
+      result[key] = value
+    else:
+      result[key] = min(value, result[key])
+  return result
+
+
+def dijkstra(input, start, goal):
+  size_i, size_j = len(input), len(input[0])
+  visited = set()
+  distance_from_start = {(0,0): 0}
+  to_visit = {start}
+  while len(to_visit) > 0:
+    current = lowest_distance_node(to_visit, distance_from_start)
+    visited.add(current)
+    to_visit.remove(current)
+    around = neighbours(size_i, size_j, *current)
+    new_distances = {(i, j) : distance_from_start[current] + input[i][j] for i, j in around}
+    distance_from_start = merge_keep_lowest_value(new_distances, distance_from_start)
+    to_visit.update(around - visited)
+  return distance_from_start[goal]
+
+def process_part_1(input):
+  size_i, size_j = len(input), len(input[0])
+  start = (0,0)
+  goal = (size_i - 1, size_j - 1)
+  return dijkstra(input, start, goal)
+  
+
+# print(process_part_1(parse(TEST_FILE)))
+assert process_part_1(parse(TEST_FILE)) == 40
+
+print(process_part_1(parse(INPUT_FILE)))
+# print(process_part_2(parse(INPUT_FILE)))
