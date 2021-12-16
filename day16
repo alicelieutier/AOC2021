@@ -1,14 +1,10 @@
 #! /usr/local/bin/python3
-
 from functools import reduce
-# from collections import deque
-from itertools import islice
 
 def read_n_bits(input_char, n):
   return ''.join(next(input_char) for _ in range(n))
 
-
-def parse_literal_packet(input_char):
+def parse_literal_value_packet(input_char):
   bits = []
   while(next(input_char) == '1'):
     bits.append(read_n_bits(input_char, 4))
@@ -28,9 +24,10 @@ OPERATORS = {
 }
 
 def parse_operator_packet(input_char, type, version_counter):
-  length_type_id = next(input_char)
-  packet_length = 7
+  packet_length = 7 # header + length type id
   values = []
+
+  length_type_id = next(input_char)
   if length_type_id == '0':
     total_length = int(read_n_bits(input_char, 15), 2)
     packet_length += 15
@@ -38,8 +35,8 @@ def parse_operator_packet(input_char, type, version_counter):
     while length < total_length:
       value, pl = parse_packet(input_char, version_counter)
       length += pl
-      values.append(value)
       packet_length += pl
+      values.append(value)
   else:
     nb_of_packets = int(read_n_bits(input_char, 11), 2)
     packet_length += 11
@@ -49,6 +46,7 @@ def parse_operator_packet(input_char, type, version_counter):
       packet_count += 1
       packet_length += pl
       values.append(value)
+
   total_value = OPERATORS[type](values)
   return (total_value, packet_length)
 
@@ -58,9 +56,9 @@ def parse_packet(input_char, version_counter=None):
   if version_counter is not None:
     version_counter(version)
   if packet_type == 4:
-    return parse_literal_packet(input_char)
+    return parse_literal_value_packet(input_char)
   return parse_operator_packet(input_char, packet_type, version_counter)
-  
+
 HEX_TO_BIN = {
 '0': '0000',
 '1': '0001',
@@ -88,15 +86,12 @@ def process_part_1(input):
   def increase_version_number_sum(number):
     nonlocal version_number_count
     version_number_count += number
-
   input_char = (char for char in hex_to_binary_string(input))
-
   parse_packet(input_char, version_counter=increase_version_number_sum)
   return version_number_count
 
 def process_part_2(input):
   input_char = (char for char in hex_to_binary_string(input))
-
   value, _ = parse_packet(input_char)
   return value
 
