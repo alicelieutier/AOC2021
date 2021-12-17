@@ -1,0 +1,113 @@
+#! /usr/local/bin/python3
+import re
+
+LINE_PATTERN = re.compile(r'^x=(?P<x_min>[-0-9]+)\.\.(?P<x_max>[-0-9]+), y=(?P<y_min>[-0-9]+)\.\.(?P<y_max>[-0-9]+)(\s|$)')
+def parse_window(string):
+  match = LINE_PATTERN.search(string)
+  data = match.groupdict()
+  return {k: int(v) for k,v in data.items()}
+
+def in_window(window, position):
+  x, y = position
+  return y_in_window(window, y) and x_in_window(window, x)
+
+def y_in_window(window, y):
+  return y >= window['y_min'] and y <= window['y_max']
+
+def x_in_window(window, x):
+  return x >= window['x_min'] and x <= window['x_max']
+
+"""
+The probe's x position increases by its x velocity.
+The probe's y position increases by its y velocity.
+Due to drag, the probe's x velocity changes by 1 toward the value 0;
+that is, it decreases by 1 if it is greater than 0,
+increases by 1 if it is less than 0,
+or does not change if it is already 0.
+Due to gravity, the probe's y velocity decreases by 1.
+"""
+def gen_y_positions(vy):
+  y = 0
+  while True:
+    yield y
+    y += vy
+    vy -= 1
+
+def gen_x_positions(vx):
+  x = 0
+  while True:
+    yield (x, vx)
+    x += vx
+    if vx > 0:
+      vx -= 1
+    elif vx < 0:
+      vx += 1
+
+def gen_positions(vx, vy):
+  for (x, _), y in zip(gen_x_positions(vx), gen_y_positions(vy)):
+    yield x, y
+
+def y_range(window):
+  valid_vy = []
+  for v in range(-200, 200):
+    y_pos = gen_y_positions(v)
+    y = next(y_pos)
+    # the window for y is alway lower than 0
+    while y >= window['y_min']:
+      if y_in_window(window, y):
+        valid_vy.append(v)
+        break
+      y = next(y_pos)
+  return valid_vy
+
+def x_range(window):
+  valid_vx = []
+  for v in range(0, 500):
+    x_pos = gen_x_positions(v)
+    x, vx = next(x_pos)
+    while vx != 0:
+      if x_in_window(window, x):
+        valid_vx.append(v)
+        break
+      x, vx = next(x_pos)
+  return valid_vx
+
+# we only need y in this part
+def process_part_1(input):
+  window = parse_window(input)
+  result = None
+  for v in range(0, 200):
+    y_pos = gen_y_positions(v)
+    y = next(y_pos)
+    max_y_pos = 0
+    while y >= window['y_min']:
+      max_y_pos = max(max_y_pos, y)
+      if y_in_window(window, y):
+        result = max_y_pos
+      y = next(y_pos)
+  return result
+
+def process_part_2(input):
+  window = parse_window(input)
+  valid_vx = x_range(window)
+  valid_vy = y_range(window)
+  result = []
+  for vx in valid_vx:
+    for vy in valid_vy:
+      pos = gen_positions(vx, vy)
+      x, y = next(pos)
+      while y >= window['y_min']:
+        if in_window(window, (x, y)):
+          result.append((vx, vy))
+          break
+        x, y = next(pos)
+  return len(result)
+
+test_1 = 'x=20..30, y=-10..-5'
+assert process_part_1(test_1) == 45 # 6, 9
+assert process_part_2(test_1) == 112
+
+INPUT = 'x=119..176, y=-141..-84'
+print(process_part_1(INPUT))
+print(process_part_2(INPUT))
+
