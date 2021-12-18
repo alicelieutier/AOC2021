@@ -1,0 +1,159 @@
+#! /usr/local/bin/python3
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+from functools import reduce
+
+def parse(file):
+  def parse_snail_number(line):
+    return eval(line)
+  with open(file) as input:
+    return (parse_snail_number(line) for line in input.readlines())
+
+def split_one(number):
+  return [number // 2, number - (number // 2)]
+
+assert split_one(11) == [5, 6]
+assert split_one(12) == [6, 6]
+
+def split(number):
+  # get out as soon as the first split has happened
+  def aux(number, level=0):
+    if isinstance(number, int):
+      if number > 9: return (True, split_one(number))
+      return (False, number)
+    # if level == 4:
+    #   return (True, 0, number[0], number[1])
+    a, b = number
+    flag, a = aux(a)
+    if not flag:
+      flag, b = aux(b)
+      if not flag:
+        return (False, [a, b])
+      # b has split
+      return (True, [a, b])
+    # a has split
+    return (True, [a, b])
+  _, result = aux(number)
+  return result
+
+assert split([[1,12],[8,5]]) == [[1,[6, 6]],[8,5]]
+# only split first that needs it
+assert split([[1,2],[15,10]]) == [[1,2],[[7, 8],10]]
+# no change is not split needed
+assert split([[1,9],[8,5]]) == [[1,9],[8,5]]
+
+def needs_split(number):
+  if isinstance(number, int):
+    return number > 9
+  a, b = number
+  return needs_split(a) or needs_split(b)
+
+def rightmost_add(number, to_add):
+  if to_add is None:
+    return number
+  if isinstance(number, int):
+    return number + to_add
+  a, b = number
+  b = rightmost_add(b, to_add)
+  return [a, b]
+
+assert rightmost_add([[2,8],[5,6]], 10) == [[2, 8], [5, 16]]
+
+def leftmost_add(number, to_add):
+  if to_add is None:
+    return number
+  if isinstance(number, int):
+    return number + to_add
+  a, b = number
+  a = leftmost_add(a, to_add)
+  return [a, b]
+
+assert leftmost_add([[[4,5],8],[5,6]], 10) == [[[14, 5], 8], [5, 6]]
+
+def explode(number):
+  def aux(number, level=0):
+    if isinstance(number, int):
+      return (False, number, None, None)
+    if level == 4:
+      return (True, 0, number[0], number[1])
+    a, b = number
+    flag, a, n1, n2 = aux(a, level + 1)
+    if not flag:
+      flag, b, n1, n2 = aux(b, level + 1)
+      if not flag:
+        return (False, [a, b], None, None)
+      # b is exploding
+      return (True, [rightmost_add(a, n1), b], None, n2)
+    # a is exploding
+    return (True, [a, leftmost_add(b, n2)], n1, None)
+  _, result, _, _ = aux(number)
+  return result
+
+assert explode([[[[[9,8],1],2],3],4]) == [[[[0,9],2],3],4]
+assert explode([7,[6,[5,[4,[3,2]]]]]) == [7,[6,[5,[7,0]]]]
+assert explode([[6,[5,[4,[3,2]]]],1]) == [[6,[5,[7,0]]],3]
+assert explode([[[6,[[2,7],9]],3],4]) == [[[6+2,[0,9+7]],3],4]
+# only explode the first pair that needs it
+assert explode([[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]) == [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]
+# exploding a number that doesn't need to explode doesn't change anything
+assert explode([[[[0,9],2],3],4]) == [[[[0,9],2],3],4]
+
+def needs_explosion(number, level=0):
+  if isinstance(number, int):
+    return False
+  if level == 4:
+    return True
+  a, b = number
+  return needs_explosion(a, level + 1) or needs_explosion(b, level + 1)
+
+assert needs_explosion([[6,[5,[7,0]]],3]) == False
+assert needs_explosion([[[[[9,8],1],2],3],4]) == True
+assert needs_explosion([[[[0,9],2],3],4]) == False
+assert needs_explosion([[[6,[[2,7],9]],3],4]) == True
+assert needs_explosion([7,[6,[5,[4,[3,2]]]]]) == True
+assert needs_explosion([[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]) == True
+assert needs_explosion([7,[6,[5,[4,[3,2]]]]]) == True
+
+def snail_reduce(snail_number):
+  if needs_explosion(snail_number):
+    return snail_reduce(explode(snail_number))
+  if needs_split(snail_number):
+    return snail_reduce(split(snail_number))
+  return snail_number
+
+def snail_add(a, b):
+  return snail_reduce([a, b])
+
+assert snail_add([1,1], [2,2]) == [[1,1], [2,2]]
+assert snail_add([[1,1], [2,2]], [3,3]) == [[[1,1], [2,2]], [3,3]]
+assert snail_add([[[[4,3],4],4],[7,[[8,4],9]]],[1,1]) == [[[[0,7],4],[[7,8],[6,0]]],[8,1]]
+
+
+"""
+The magnitude of a pair is 3 times the magnitude of its
+left element plus 2 times the magnitude of its right element. 
+The magnitude of a regular number is just that number.
+"""
+def magnitude(number):
+  if isinstance(number, int):
+    return number
+  a, b = number
+  return 3 * magnitude(a) + 2 * magnitude(b)
+
+assert magnitude([[1,2],[[3,4],5]]) == 143
+assert magnitude([[[[0,7],4],[[7,8],[6,0]]],[8,1]]) == 1384
+assert magnitude([[[[1,1],[2,2]],[3,3]],[4,4]]) == 445
+
+def process_part_1(input):
+  total = reduce(snail_add, input)
+  return magnitude(total)
+
+assert process_part_1(parse(TEST_FILE)) == 4140
+
+print(process_part_1(parse(INPUT_FILE)))
+# print(process_part_2(parse(INPUT_FILE)))
+
+
+
