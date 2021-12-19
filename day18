@@ -41,12 +41,6 @@ assert split([[1,2],[15,10]]) == [[1,2],[[7, 8],10]]
 # no change is not split needed
 assert split([[1,9],[8,5]]) == [[1,9],[8,5]]
 
-def needs_split(number):
-  if isinstance(number, int):
-    return number > 9
-  a, b = number
-  return needs_split(a) or needs_split(b)
-
 def rightmost_add(number, to_add):
   if to_add is None:
     return number
@@ -97,27 +91,11 @@ assert explode([[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]) == [[3,[2,[8,0]]],[9,[5,[4
 # exploding a number that doesn't need to explode doesn't change anything
 assert explode([[[[0,9],2],3],4]) == [[[[0,9],2],3],4]
 
-def needs_explosion(number, level=0):
-  if isinstance(number, int):
-    return False
-  if level == 4:
-    return True
-  a, b = number
-  return needs_explosion(a, level + 1) or needs_explosion(b, level + 1)
-
-assert needs_explosion([[6,[5,[7,0]]],3]) == False
-assert needs_explosion([[[[[9,8],1],2],3],4]) == True
-assert needs_explosion([[[[0,9],2],3],4]) == False
-assert needs_explosion([[[6,[[2,7],9]],3],4]) == True
-assert needs_explosion([7,[6,[5,[4,[3,2]]]]]) == True
-assert needs_explosion([[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]) == True
-assert needs_explosion([7,[6,[5,[4,[3,2]]]]]) == True
-
 def snail_reduce(snail_number):
-  if needs_explosion(snail_number):
-    return snail_reduce(explode(snail_number))
-  if needs_split(snail_number):
-    return snail_reduce(split(snail_number))
+  exploded = explode(snail_number)
+  if exploded != snail_number: return snail_reduce(exploded)
+  splitted = split(snail_number)
+  if splitted != snail_number: return snail_reduce(splitted)
   return snail_number
 
 def snail_add(a, b):
@@ -165,5 +143,5 @@ TEST_INPUT = (
 assert process_part_1(TEST_INPUT) == 4140
 assert process_part_2(TEST_INPUT) == 3993
 
-print(process_part_1(parse(INPUT_FILE)))
-print(process_part_2(parse(INPUT_FILE)))
+print(process_part_1(parse(INPUT_FILE))) # 3869
+print(process_part_2(parse(INPUT_FILE))) # 4671

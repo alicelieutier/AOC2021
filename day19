@@ -1,0 +1,175 @@
+#! /usr/local/opt/python@3.10/bin/python3
+
+from functools import lru_cache
+from collections import Counter
+from itertools import combinations, count
+from math import floor
+# from math import sqrt
+
+
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = 'test.input'
+
+def parse(file):
+  def parse_report(report):
+    lines = report.splitlines()
+    return tuple(tuple(map(int, line.split(','))) for line in lines[1:])
+
+  with open(file) as input:
+    scanner_reports = input.read().split('\n\n')
+    scanner_reports = [parse_report(report) for report in scanner_reports]
+    return scanner_reports
+
+def vector(a, b):
+  return tuple(x1 - x0 for x0, x1 in zip(a, b))
+
+def scalar(v1, v2):
+  return sum(xa * xb for xa, xb in zip(v1, v2))
+
+@lru_cache
+def norm_squared(a, b):
+  vab = vector(a, b)
+  return sum(l**2 for l in vab)
+
+def pairs(scanner_report):
+  norms = {}
+  points_to_pairs = {}
+  for a, b in combinations(scanner_report, 2):
+    ns = norm_squared(a, b)
+    if ns in norms:
+      print('NOT GOOD')
+    # if ns < 2000000:
+    norms[ns] = (a, b)
+    points_to_pairs.setdefault(a, [])
+    points_to_pairs.setdefault(b, [])
+    points_to_pairs[a].append(ns)
+    points_to_pairs[b].append(ns)
+  return norms, points_to_pairs
+
+MIRORS = [
+  lambda a, b, c: (a, b, c),
+  lambda a, b, c: (a, b, -c),
+  lambda a, b, c: (a, -b, c),
+  lambda a, b, c: (a, -b, -c),
+  lambda a, b, c: (-a, b, c),
+  lambda a, b, c: (-a, b, -c),
+  lambda a, b, c: (-a, -b, c),
+  lambda a, b, c: (-a, -b, -c),
+]
+
+ROTATIONS = [
+  lambda a, b, c: (a, b, c),
+  lambda a, b, c: (a, c, b),
+  lambda a, b, c: (c, a, b),
+  lambda a, b, c: (c, b, a),
+  lambda a, b, c: (b, a, c),
+  lambda a, b, c: (b, c, a),
+]
+
+def find_coord_change(a1, a2, b1, b2):
+  v1 = vector(a1, b1)
+  v2 = vector(a2, b2)
+  final_m, final_r = None, None
+  for m in MIRORS:
+    for r in ROTATIONS:
+      if m(*r(*v1)) == v2:
+        final_m, final_r = m, r
+
+  if None in [final_m, final_r]:
+    print(v1, v2)
+
+  translation = tuple(k - f for k, f in zip(final_m(*final_r(*a1)), a2))
+
+  trans_m = None
+  for m in MIRORS:
+    if tuple(a - b for a, b in zip(final_m(*final_r(*a1)), m(*translation))) == a2:
+      trans_m = m
+
+  def transform(p):
+    return tuple(a - b for a, b in zip(final_m(*final_r(*p)), trans_m(*translation)))
+
+  assert transform(a1) == a2
+  assert transform(b1) == b2
+
+  return transform
+
+
+def find_corresponding_points(intersect, points_to_norm1, points_to_norm2, pairs1, pairs2):
+  norm = intersect.pop()
+
+  a1, b1 = pairs1[norm]
+  other_norms1 = set(points_to_norm1[a1]) - {norm}
+  norm2 = (other_norms1 & intersect).pop()
+  a2 = (set(pairs2[norm]) & set(pairs2[norm2])).pop()
+
+  other_norms2 = set(points_to_norm1[b1]) - {norm}
+  norm3 = (other_norms2 & intersect).pop()
+  b2 = (set(pairs2[norm]) & set(pairs2[norm3])).pop()
+
+  return a1, a2, b1, b2
+
+def transform_to_0(report, number, transforms):
+  path = path_to_0(transforms.keys(), number)
+  initial = number
+  for dest in path:
+    report = list(transforms[(initial, dest)](point) for point in report)
+    initial = dest
+  return report
+
+def path_to_0(edges, start):
+  best_path = [None]*200
+  def aux_path_to_0(start, path=[]):
+    nonlocal best_path
+    if start == 0:
+      if len(path) < len(best_path):
+        best_path = path
+    neighbours = {j for i, j in edges if i == start}
+    for node in neighbours:
+      if node not in path:
+        aux_path_to_0(node, path + [node])
+  aux_path_to_0(start)
+  return best_path
+
+assert path_to_0([(0, 1), (1, 0), (1, 3), (3, 1), (1, 4), (4, 1), (2, 4), (4, 2)], 4) == [1, 0]
+assert path_to_0([(0, 1), (1, 0), (1, 3), (3, 1), (1, 4), (4, 1), (2, 4), (4, 2)], 2) == [4, 1, 0]
+assert path_to_0([(0, 1), (1, 0), (1, 3), (3, 1), (1, 4), (4, 1), (2, 4), (4, 2)], 3) == [1, 0]
+
+def process_part_1(input):
+  transforms = {}
+  for (i, report1), (j, report2) in combinations(zip(count(), input), 2):
+    pairs1, points_to_norm1 = pairs(report1)
+    pairs2, points_to_norm2 = pairs(report2)
+    intersect = pairs1.keys() & pairs2.keys()
+    if len(intersect) == 66:
+      print(f'scanner {i} intersects with scanner {j}')
+      a1, a2, b1, b2 = find_corresponding_points(intersect, points_to_norm1, points_to_norm2, pairs1, pairs2)
+      transforms[(i, j)] = find_coord_change(a1, a2, b1, b2)
+      transforms[(j, i)] = find_coord_change(a2, a1, b2, b1)
+
+  points = set()
+  for number, report in zip(count(), input):
+    points.update(set(transform_to_0(report, number, transforms)))
+
+  return len(points), transforms
+
+def manhattan(p1, p2):
+  return sum(abs(a - b) for a, b in zip(p1, p2))
+
+assert(manhattan((1105,-1205,1229),(-92,-2380,-20))) == 3621
+
+def process_part_2(input, transforms):
+  max_manhattan = 0
+  for (i, _), (j, _) in combinations(zip(count(), input), 2):
+    scan1 = transform_to_0([(0,0,0)], i, transforms)[0]
+    scan2 = transform_to_0([(0,0,0)], j, transforms)[0]
+    max_manhattan = max(max_manhattan, manhattan(scan1, scan2))
+  return max_manhattan
+
+l_test, t_test = process_part_1(parse(TEST_FILE))
+assert l_test == 79
+assert process_part_2(parse(TEST_FILE), t_test) == 3621
+
+l, t = process_part_1(parse(INPUT_FILE))
+print('Part 1', l)
+
+print(process_part_2(parse(INPUT_FILE), t))
