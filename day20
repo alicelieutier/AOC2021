@@ -9,13 +9,7 @@ def parse(file):
     image = tuple(list(line) for line in image.split('\n'))
     return algorithm, image
 
-def parse_image(file):
-  with open(file) as input:
-    image = [list(line.strip()) for line in input.readlines()]
-    return image
-
 def get(image, i, j):
-  # print(i, j, len(image), len(image[0]))
   if i >= 0 and i < len(image) and j >= 0 and j < len(image[0]):
     return image[i][j]
   return '.'
@@ -75,18 +69,15 @@ def process_part_1(input):
   algorithm, image = input
   image = enhance(algorithm, image, 20)
   image = enhance(algorithm, image, 20)
-  image = trim_image(image, 35)
-  print_out(image)
+  image = trim_image(image, 38)
   return lit_pixels(image)
 
 def process_part_2(input):
   algorithm, image = input
-  for i in range(25):
-    print(i)
+  for _ in range(25):
     image = enhance(algorithm, image, 20)
     image = enhance(algorithm, image, 20)
-    image = trim_image(image, 35)
-  print_out(image)
+    image = trim_image(image, 38)
   return lit_pixels(image)
 
 assert process_part_1(parse(TEST_FILE)) == 35
