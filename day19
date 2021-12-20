@@ -1,14 +1,9 @@
 #! /usr/local/opt/python@3.10/bin/python3
 
-from functools import lru_cache
-from collections import Counter
 from itertools import combinations, count
-from math import floor
-# from math import sqrt
-
 
 INPUT_FILE = f'{__file__}.input'
-TEST_FILE = 'test.input'
+TEST_FILE = f'{__file__}.test.input'
 
 def parse(file):
   def parse_report(report):
@@ -26,7 +21,6 @@ def vector(a, b):
 def scalar(v1, v2):
   return sum(xa * xb for xa, xb in zip(v1, v2))
 
-@lru_cache
 def norm_squared(a, b):
   vab = vector(a, b)
   return sum(l**2 for l in vab)
