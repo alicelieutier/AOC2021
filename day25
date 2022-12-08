@@ -1,0 +1,142 @@
+INPUT_FILE = f'{__file__}.input'
+TEST_FILE = f'{__file__}.test.input'
+
+def parse(file):
+  with open(file) as input:
+    return [line.strip() for line in input.readlines()]
+
+DOWN = 'v'
+RIGHT = '>'
+EMPTY = '.'
+
+# Every step, the sea cucumbers in the east-facing herd attempt to
+# move forward one location, then the sea cucumbers in the
+# south-facing herd attempt to move forward one location. 
+# When a herd moves forward, every sea cucumber in the herd first 
+# simultaneously considers whether there is a sea cucumber in the 
+# adjacent location it's facing (even another sea cucumber facing 
+# the same direction), and then every sea cucumber facing an empty 
+# location simultaneously moves into that location.
+
+def grid_iterator(grid):
+  return ((i,j) for i in range(len(grid)) for j in range(len(grid[0])))
+
+def step_east(grid):
+  new_grid = [list(row) for row in grid]
+  for i,j in grid_iterator(grid):
+    if grid[i][j] == '>' and grid[i][(j+1) % len(grid[0])] == '.':
+      new_grid[i][j] = '.'
+      new_grid[i][(j+1) % len(grid[0])] = '>'
+  return [''.join(row) for row in new_grid]
+
+def step_south(grid):
+  new_grid = [list(row) for row in grid]
+  for i,j in grid_iterator(grid):
+    if grid[i][j] == 'v' and grid[(i+1) % len(grid)][j] == '.':
+      new_grid[i][j] = '.'
+      new_grid[(i+1) % len(grid)][j] = 'v'
+  return [''.join(row) for row in new_grid]
+
+
+def step(grid):
+  grid = step_east(grid)
+  grid = step_south(grid)
+  return grid
+
+def process_part_1(grid):
+  counter = 0
+  while True:
+    new_grid = step(grid)
+    counter += 1
+    if grid == new_grid:
+      return counter
+    grid = new_grid
+
+print(process_part_1(parse(INPUT_FILE)))
+
+# Test
+assert step_east(['.>.']) == ['..>']
+assert step_east(['>>.']) == ['>.>']
+assert step_east(['..>']) == ['>..']
+
+assert step([
+  '.v.',
+  '...',
+  '...',
+]) == [
+  '...',
+  '.v.',
+  '...',
+]
+
+assert step([
+  '...',
+  '...',
+  '>..'
+]) == [
+  '...',
+  '...',
+  '.>.',
+]
+
+assert step([
+  '.v.',
+  '.>.',
+  '...',
+]) == [
+  '...',
+  '.v>',
+  '...',
+]
+
+assert step([
+  '...',
+  '>v.',
+  '...',
+]) == [
+  '...',
+  '>..',
+  '.v.',
+]
+
+assert step([
+  '...',
+  '..>',
+  '...',
+]) == [
+  '...',
+  '>..',
+  '...',
+]
+
+assert step([
+  '...',
+  '...',
+  'v..',
+]) == [
+  'v..',
+  '...',
+  '...',
+]
+
+assert step([
+  '>>.',
+  '...',
+  '.v.',
+]) == [
+  '>v>',
+  '...',
+  '...',
+]
+
+assert step([
+  '>v>',
+  '...',
+  '.v.',
+]) == [
+  '>.>',
+  '.v.',
+  '.v.',
+]
+
+assert process_part_1(parse(TEST_FILE)) == 58
